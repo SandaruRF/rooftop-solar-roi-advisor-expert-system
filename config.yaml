@@ -1,0 +1,138 @@
+# Knowledge Base Configuration for Sri Lankan Rooftop Solar ROI Advisor
+
+# Regional solar data (average sun hours per day)
+regions:
+  colombo:
+    sun_hours: 5.2
+    uncertainty: 0.3
+  gampaha:
+    sun_hours: 5.3
+    uncertainty: 0.3
+  kalutara:
+    sun_hours: 5.4
+    uncertainty: 0.3
+  kandy:
+    sun_hours: 5.0
+    uncertainty: 0.4
+  galle:
+    sun_hours: 5.3
+    uncertainty: 0.3
+  matara:
+    sun_hours: 5.5
+    uncertainty: 0.3
+  hambantota:
+    sun_hours: 5.8
+    uncertainty: 0.2
+  jaffna:
+    sun_hours: 5.7
+    uncertainty: 0.2
+  trincomalee:
+    sun_hours: 5.6
+    uncertainty: 0.3
+  batticaloa:
+    sun_hours: 5.5
+    uncertainty: 0.3
+  anuradhapura:
+    sun_hours: 5.6
+    uncertainty: 0.3
+  kurunegala:
+    sun_hours: 5.4
+    uncertainty: 0.3
+  ratnapura:
+    sun_hours: 4.8
+    uncertainty: 0.4
+  badulla:
+    sun_hours: 5.1
+    uncertainty: 0.4
+  monaragala:
+    sun_hours: 5.4
+    uncertainty: 0.3
+
+# Solar panel specifications
+panels:
+  standard:
+    wattage: 450  # Watts per panel
+    efficiency: 0.85  # System efficiency (accounting for inverter losses, dust, etc.)
+    area_sqft: 21  # Area per panel in square feet (approximate for 450W panel)
+    degradation_rate: 0.005  # 0.5% per year
+    lifespan_years: 25
+
+# Installation costs (in LKR)
+costs:
+  cost_per_kw: 180000  # Average installation cost per kW in Sri Lanka (2025)
+  fixed_cost: 50000  # Fixed costs (permits, installation setup)
+  min_uncertainty: 0.10  # ±10% cost uncertainty
+  
+  # Cost adjustments based on roof type
+  roof_multipliers:
+    tile: 1.0
+    asbestos: 0.95  # Slightly cheaper
+    concrete: 1.05
+    other: 1.0
+
+# CEB/LECO Electricity Tariffs (2025 domestic rates in LKR per kWh)
+# Using progressive tariff structure
+tariffs:
+  # Monthly consumption brackets
+  brackets:
+    - max_units: 60
+      rate: 8.00
+    - max_units: 90
+      rate: 10.00
+    - max_units: 120
+      rate: 27.75
+    - max_units: 180
+      rate: 32.00
+    - max_units: null  # Above 180
+      rate: 45.00
+  
+  fixed_charge: 400  # Monthly fixed charge in LKR
+  tariff_uncertainty: 0.15  # ±15% uncertainty due to possible future changes
+
+# System sizing rules
+sizing:
+  # Safety factor for system sizing (oversizing to account for real-world conditions)
+  oversizing_factor: 1.15
+  
+  # Minimum and maximum recommended system sizes
+  min_system_kw: 1.0
+  max_system_kw: 10.0
+  
+  # Roof space requirements
+  min_roof_space_sqft: 100
+  space_buffer: 1.2  # 20% extra space needed for spacing between panels
+
+# Recommendation thresholds
+thresholds:
+  max_payback_acceptable: 12  # Maximum acceptable payback years
+  ideal_payback: 7  # Ideal payback period
+  excellent_payback: 5  # Excellent payback period
+  
+  # Budget constraints
+  min_budget_lkr: 150000
+  
+  # Confidence levels
+  confidence:
+    high: 0.9  # High confidence threshold
+    medium: 0.7  # Medium confidence threshold
+    # Below medium is low confidence
+
+# Savings calculation parameters
+savings:
+  # Percentage of solar energy that offsets grid consumption
+  self_consumption_rate: 0.80  # 80% of generated power is self-consumed
+  
+  # Net metering assumptions (if excess is sold back)
+  export_rate_multiplier: 0.5  # Utilities buy back at 50% of retail rate
+  
+  # Annual maintenance costs as percentage of initial investment
+  annual_maintenance_rate: 0.01  # 1% per year
+
+# Educational resources
+resources:
+  - name: "Ceylon Electricity Board - Solar Programs"
+    url: "https://www.ceb.lk/solar-power"
+  - name: "Sustainable Energy Authority"
+    url: "https://www.energy.gov.lk/"
+  - name: "Sri Lanka Solar Industry Guide"
+    url: "https://www.solarek.lk/resources"
