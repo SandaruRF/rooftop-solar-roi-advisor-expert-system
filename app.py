@@ -41,7 +41,7 @@ st.markdown("""
         margin: 1rem 0;
     }
     .warning-box {
-        background-color: #fff3cd;
+        background-color: #fff3cd20;
         border-left: 5px solid #ffc107;
         padding: 1rem;
         border-radius: 5px;
@@ -316,17 +316,24 @@ def display_results(recommendation, monthly_kwh, location, roof_type, budget, ro
     
     # Confidence and Uncertainty
     st.markdown("### 📈 Confidence Assessment")
-    confidence_color = {
-        "high": "green",
-        "medium": "orange",
-        "low": "red"
+    confidence_colors = {
+        "high": "#4CAF50",  # Green
+        "medium": "#FF9800",  # Orange
+        "low": "#f44336"  # Red
     }
-    color = confidence_color.get(recommendation.confidence_level, "gray")
+    confidence_icons = {
+        "high": "🟢",
+        "medium": "🟡",
+        "low": "🔴"
+    }
+    
+    bg_color = confidence_colors.get(recommendation.confidence_level, "#9E9E9E")
+    icon = confidence_icons.get(recommendation.confidence_level, "⚪")
     
     st.markdown(f"""
-    <div class="info-box">
-    <strong>Confidence Level: {recommendation.confidence_level.upper()}</strong><br>
-    Payback Period Uncertainty: ±{recommendation.confidence_uncertainty} years<br>
+    <div style="background-color: {bg_color}15; border-left: 5px solid {bg_color}; padding: 1rem; border-radius: 5px; margin: 1rem 0;">
+    <strong style="color: {bg_color};">{icon} Confidence Level: {recommendation.confidence_level.upper()}</strong><br>
+    <strong>Payback Period Uncertainty:</strong> ±{recommendation.confidence_uncertainty} years<br>
     <small>This accounts for variations in sun hours, electricity tariffs, and installation costs.</small>
     </div>
     """, unsafe_allow_html=True)
@@ -346,6 +353,92 @@ def display_results(recommendation, monthly_kwh, location, roof_type, budget, ro
         st.markdown("### 💡 Alternative Options")
         for alternative in recommendation.alternatives:
             st.info(alternative)
+    
+    # Service Provider Alternatives
+    st.markdown("### 🏢 Compare Service Providers")
+    st.markdown("*Estimated costs for your system from different installers:*")
+    
+    config = utils.load_config()
+    providers = config['costs'].get('providers', [])
+    
+    if providers:
+        # Calculate costs for each provider
+        provider_data = []
+        for provider in providers:
+            provider_cost_per_kw = provider['installation_cost_per_kw']
+            provider_fixed = provider['fixed_cost']
+            
+            # Calculate total cost for this provider
+            total_cost = (recommendation.recommended_system_kw * provider_cost_per_kw) + provider_fixed
+            
+            # Calculate payback with this provider's cost
+            if recommendation.annual_savings > 0:
+                payback = round(total_cost / recommendation.annual_savings, 1)
+            else:
+                payback = None
+            
+            provider_data.append({
+                'Provider': provider['name'],
+                'Service Tier': provider['service_tier'].capitalize(),
+                'Est. Cost (LKR)': f"{total_cost:,.0f}",
+                'Warranty (Years)': provider['warranty_years'],
+                'Payback (Years)': f"{payback}" if payback else "N/A",
+                'Notes': provider['notes']
+            })
+        
+        # Create tabs for different views
+        tab1, tab2 = st.tabs(["📊 Quick Compare", "📋 Detailed View"])
+        
+        with tab1:
+            # Display as table without notes
+            import pandas as pd
+            df = pd.DataFrame(provider_data)
+            df_display = df[['Provider', 'Service Tier', 'Est. Cost (LKR)', 'Warranty (Years)', 'Payback (Years)']]
+            st.dataframe(df_display, use_container_width=True, hide_index=True)
+            
+            # Highlight best options
+            st.markdown("**💡 Quick Tips:**")
+            col1, col2, col3 = st.columns(3)
+            
+            # Find best budget option
+            budget_provider = min(provider_data, key=lambda x: float(x['Est. Cost (LKR)'].replace(',', '')))
+            with col1:
+                st.info(f"**Most Affordable:**\n\n{budget_provider['Provider']}\n\n{budget_provider['Est. Cost (LKR)']}")
+            
+            # Find best warranty
+            warranty_provider = max(provider_data, key=lambda x: x['Warranty (Years)'])
+            with col2:
+                st.success(f"**Best Warranty:**\n\n{warranty_provider['Provider']}\n\n{warranty_provider['Warranty (Years)']} years")
+            
+            # Find best payback
+            valid_paybacks = [p for p in provider_data if p['Payback (Years)'] != 'N/A']
+            if valid_paybacks:
+                payback_provider = min(valid_paybacks, key=lambda x: float(x['Payback (Years)']))
+                with col3:
+                    st.warning(f"**Fastest Payback:**\n\n{payback_provider['Provider']}\n\n{payback_provider['Payback (Years)']} years")
+        
+        with tab2:
+            # Detailed cards for each provider
+            for i, provider_info in enumerate(provider_data):
+                tier_colors = {
+                    'Budget': '#2196F3',
+                    'Standard': '#4CAF50',
+                    'Premium': '#9C27B0'
+                }
+                tier_color = tier_colors.get(provider_info['Service Tier'], '#757575')
+                
+                st.markdown(f"""
+                <div style="background-color: {tier_color}10; border-left: 5px solid {tier_color}; padding: 1.5rem; border-radius: 5px; margin: 1rem 0;">
+                    <h4 style="color: {tier_color}; margin-top: 0;">🏢 {provider_info['Provider']}</h4>
+                    <p><strong>Service Tier:</strong> <span style="color: {tier_color};">{provider_info['Service Tier']}</span></p>
+                    <p><strong>Estimated Cost:</strong> {provider_info['Est. Cost (LKR)']}</p>
+                    <p><strong>Warranty:</strong> {provider_info['Warranty (Years)']} years</p>
+                    <p><strong>Estimated Payback:</strong> {provider_info['Payback (Years)']}</p>
+                    <p><strong>Details:</strong> <em>{provider_info['Notes']}</em></p>
+                </div>
+                """, unsafe_allow_html=True)
+    else:
+        st.info("Provider comparison data not available in configuration.")
     
     # Reasoning Steps
     with st.expander("🧠 Expert System Reasoning Process"):

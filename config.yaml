@@ -62,13 +62,63 @@ costs:
   cost_per_kw: 180000  # Average installation cost per kW in Sri Lanka (2025)
   fixed_cost: 50000  # Fixed costs (permits, installation setup)
   min_uncertainty: 0.10  # ±10% cost uncertainty
-  
+
   # Cost adjustments based on roof type
   roof_multipliers:
     tile: 1.0
     asbestos: 0.95  # Slightly cheaper
     concrete: 1.05
     other: 1.0
+
+  # Service provider-specific estimates (for alternative recommendations)
+  providers:
+    - name: "Lanka Solar Solutions"
+      installation_cost_per_kw: 165000
+      fixed_cost: 40000
+      cost_uncertainty: 0.12
+      warranty_years: 10
+      service_tier: "budget"
+      notes: "Local installer offering cost-focused packages; component brands vary."
+
+    - name: "Horizon PV Lanka"
+      installation_cost_per_kw: 180000
+      fixed_cost: 50000
+      cost_uncertainty: 0.10
+      warranty_years: 12
+      service_tier: "standard"
+      notes: "Balanced price and quality, commonly recommended for residential installs."
+
+    - name: "Suncrest Energy (SL)"
+      installation_cost_per_kw: 195000
+      fixed_cost: 60000
+      cost_uncertainty: 0.08
+      warranty_years: 15
+      service_tier: "premium"
+      notes: "Uses higher-tier inverters/panels; extended warranties available."
+
+    - name: "Island Green Solar"
+      installation_cost_per_kw: 160000
+      fixed_cost: 55000
+      cost_uncertainty: 0.15
+      warranty_years: 8
+      service_tier: "budget"
+      notes: "Aggressive pricing for basic systems; higher uncertainty on long-term performance."
+
+    - name: "Ceylon Renewable Works"
+      installation_cost_per_kw: 210000
+      fixed_cost: 70000
+      cost_uncertainty: 0.07
+      warranty_years: 20
+      service_tier: "premium"
+      notes: "Full-turnkey provider with premium components and extended service packages."
+
+    - name: "Metro Solar Contractors"
+      installation_cost_per_kw: 175000
+      fixed_cost: 48000
+      cost_uncertainty: 0.11
+      warranty_years: 12
+      service_tier: "standard"
+      notes: "Good balance of price and after-sales support; suitable for urban installs."
 
 # CEB/LECO Electricity Tariffs (2025 domestic rates in LKR per kWh)
 # Using progressive tariff structure
