@@ -545,61 +545,66 @@ def sidebar_footer():
 def render_floating_button():
     """Render a fixed floating button at bottom-right corner with click handler"""
     
-    # Check if button should trigger popup
-    if st.session_state.get('open_chat_clicked', False):
-        st.session_state.chat_popup_open = True
-        st.session_state.open_chat_clicked = False
-        st.rerun()
+    # Initialize chat popup state
+    if "chat_popup_open" not in st.session_state:
+        st.session_state.chat_popup_open = False
     
-    button_html = """
-    <style>
-    .floating-chat-btn {
-        position: fixed !important;
-        bottom: 30px !important;
-        right: 30px !important;
-        width: 60px !important;
-        height: 60px !important;
-        border-radius: 50% !important;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        border: none !important;
-        cursor: pointer !important;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
-        z-index: 9999 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        transition: all 0.3s ease !important;
-        text-decoration: none !important;
-    }
+    # Create a container for the button positioned absolutely
+    button_container = st.container()
     
-    .floating-chat-btn:hover {
-        transform: scale(1.1) !important;
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6) !important;
-    }
-    
-    @keyframes pulse {
-        0%, 100% {
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-        50% {
-            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.8);
-        }
-    }
-    </style>
-    
-    <form id="chatButtonForm" action="" method="get">
-        <input type="hidden" name="action" value="open">
-        <button type="submit" class="floating-chat-btn" title="Open Chat Assistant" style="animation: pulse 2s infinite;">
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 30px; height: 30px; fill: white;">
-                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
-                <circle cx="12" cy="10" r="1.5"/>
-                <circle cx="8" cy="10" r="1.5"/>
-                <circle cx="16" cy="10" r="1.5"/>
-            </svg>
-        </button>
-    </form>
-    """
-    st.markdown(button_html, unsafe_allow_html=True)
+    with button_container:
+        # Use columns to position the button (invisible layout trick)
+        cols = st.columns([1])
+        with cols[0]:
+            # Custom CSS for the button
+            st.markdown("""
+                <style>
+                /* Hide the default Streamlit button styling */
+                div[data-testid="stVerticalBlock"] > div:has(button[kind="secondary"]) {
+                    position: fixed !important;
+                    bottom: 30px !important;
+                    right: 30px !important;
+                    z-index: 9999 !important;
+                }
+                
+                .stButton > button[kind="secondary"] {
+                    width: 60px !important;
+                    height: 60px !important;
+                    border-radius: 50% !important;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+                    border: none !important;
+                    cursor: pointer !important;
+                    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+                    padding: 0 !important;
+                    animation: pulse 2s infinite !important;
+                }
+                
+                .stButton > button[kind="secondary"]:hover {
+                    transform: scale(1.1) !important;
+                    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6) !important;
+                }
+                
+                .stButton > button[kind="secondary"] p {
+                    font-size: 30px !important;
+                    margin: 0 !important;
+                    line-height: 1 !important;
+                }
+                
+                @keyframes pulse {
+                    0%, 100% {
+                        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+                    }
+                    50% {
+                        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.8);
+                    }
+                }
+                </style>
+            """, unsafe_allow_html=True)
+            
+            # The actual button that toggles the popup
+            if st.button("💬", key="floating_chat_btn", type="secondary", help="Toggle Chat Assistant"):
+                # Toggle the popup state
+                st.session_state.chat_popup_open = not st.session_state.chat_popup_open
 
 
 if __name__ == "__main__":
