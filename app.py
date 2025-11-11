@@ -7,6 +7,15 @@ import streamlit as st
 import yaml
 from solar_expert import run_expert_system
 import utils
+import os
+from chat_popup import render_chat_popup
+
+# Try to import Gemini
+try:
+    import google.generativeai as genai
+    GEMINI_AVAILABLE = True
+except ImportError:
+    GEMINI_AVAILABLE = False
 
 
 # Page configuration
@@ -288,6 +297,11 @@ def display_results(recommendation, monthly_kwh, location, roof_type, budget, ro
     
     # Financial Details
     st.markdown("### 💰 Financial Analysis")
+    
+    # Calculate consumption coverage
+    annual_consumption = monthly_kwh * 12
+    coverage_percentage = (recommendation.annual_generation_kwh / annual_consumption * 100) if annual_consumption > 0 else 0
+    
     col1, col2 = st.columns(2)
     
     with col1:
@@ -295,24 +309,52 @@ def display_results(recommendation, monthly_kwh, location, roof_type, budget, ro
         **Annual Energy Generation:**  
         {recommendation.annual_generation_kwh:,.0f} kWh/year
         
+        **Your Annual Consumption:**  
+        {annual_consumption:,.0f} kWh/year ({monthly_kwh:,.0f} kWh/month)
+        
+        **Solar Coverage:**  
+        {coverage_percentage:.1f}% of your electricity needs
+        
         **Annual Electricity Savings:**  
         LKR {recommendation.annual_savings:,.2f}/year
-        
-        **25-Year Lifetime Savings:**  
-        LKR {recommendation.annual_savings * 25:,.2f}
         """)
     
     with col2:
         st.markdown(f"""
+        **Installation Cost:**  
+        LKR {recommendation.installation_cost:,.0f}
+        
+        **25-Year Lifetime Savings:**  
+        LKR {recommendation.annual_savings * 25:,.2f}
+        
         **Roof Space Required:**  
         ~{recommendation.required_roof_space:.0f} sq.ft.
         
         **Confidence Level:**  
         {recommendation.confidence_level.upper()}
-        
-        **Monthly Consumption:**  
-        {monthly_kwh} kWh
         """)
+    
+    # Show coverage info box
+    if coverage_percentage < 100:
+        coverage_color = "#FF9800" if coverage_percentage >= 70 else "#f44336"
+        st.markdown(f"""
+        <div style="background-color: {coverage_color}15; border-left: 5px solid {coverage_color}; padding: 1rem; border-radius: 5px; margin: 1rem 0;">
+        <strong style="color: {coverage_color};">ℹ️ System Coverage Notice</strong><br>
+        This {recommendation.recommended_system_kw} kW system will generate <strong>{recommendation.annual_generation_kwh:,.0f} kWh/year</strong>, 
+        which covers <strong>{coverage_percentage:.1f}%</strong> of your annual consumption of <strong>{annual_consumption:,.0f} kWh/year</strong>.<br>
+        <small>The remaining {100 - coverage_percentage:.1f}% ({annual_consumption - recommendation.annual_generation_kwh:,.0f} kWh/year) will still be drawn from the grid. 
+        This is likely due to budget or roof space constraints limiting the system size.</small>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown(f"""
+        <div style="background-color: #4CAF5015; border-left: 5px solid #4CAF50; padding: 1rem; border-radius: 5px; margin: 1rem 0;">
+        <strong style="color: #4CAF50;">✓ Full Coverage System</strong><br>
+        This system will generate <strong>{recommendation.annual_generation_kwh:,.0f} kWh/year</strong>, 
+        which covers <strong>{coverage_percentage:.1f}%</strong> of your annual consumption!<br>
+        <small>You may even have excess energy that can be sold back to the grid under net metering programs.</small>
+        </div>
+        """, unsafe_allow_html=True)
     
     # Confidence and Uncertainty
     st.markdown("### 📈 Confidence Assessment")
@@ -500,6 +542,68 @@ def sidebar_footer():
     """, unsafe_allow_html=True)
 
 
+def render_floating_button():
+    """Render a fixed floating button at bottom-right corner with click handler"""
+    
+    # Check if button should trigger popup
+    if st.session_state.get('open_chat_clicked', False):
+        st.session_state.chat_popup_open = True
+        st.session_state.open_chat_clicked = False
+        st.rerun()
+    
+    button_html = """
+    <style>
+    .floating-chat-btn {
+        position: fixed !important;
+        bottom: 30px !important;
+        right: 30px !important;
+        width: 60px !important;
+        height: 60px !important;
+        border-radius: 50% !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        border: none !important;
+        cursor: pointer !important;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+        z-index: 9999 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: all 0.3s ease !important;
+        text-decoration: none !important;
+    }
+    
+    .floating-chat-btn:hover {
+        transform: scale(1.1) !important;
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6) !important;
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        50% {
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.8);
+        }
+    }
+    </style>
+    
+    <form id="chatButtonForm" action="" method="get">
+        <input type="hidden" name="action" value="open">
+        <button type="submit" class="floating-chat-btn" title="Open Chat Assistant" style="animation: pulse 2s infinite;">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 30px; height: 30px; fill: white;">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+                <circle cx="12" cy="10" r="1.5"/>
+                <circle cx="8" cy="10" r="1.5"/>
+                <circle cx="16" cy="10" r="1.5"/>
+            </svg>
+        </button>
+    </form>
+    """
+    st.markdown(button_html, unsafe_allow_html=True)
+
+
 if __name__ == "__main__":
     main()
     sidebar_footer()
+    render_floating_button()  # Add floating button to all pages
+    render_chat_popup()  # Add chat popup functionality
