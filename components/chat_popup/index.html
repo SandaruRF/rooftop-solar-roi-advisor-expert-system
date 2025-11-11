@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Chat Popup Component</title>
+    <style>
+        :root {
+            font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            background: transparent;
+        }
+
+        body[data-popup="closed"] #chatOverlay,
+        body[data-popup="closed"] #chatPopup {
+            display: none;
+        }
+
+        body {
+            position: relative;
+            overflow: visible;
+        }
+
+        #chatOverlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.15);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        #chatPopup {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+            border-radius: 18px;
+            box-shadow: 0 18px 48px rgba(31, 41, 55, 0.28);
+            overflow: hidden;
+            z-index: 2;
+            border: 1px solid rgba(102, 126, 234, 0.18);
+        }
+
+        body[data-popup="minimized"] #chatPopup {
+            border-radius: 50px;
+        }
+
+        body[data-popup="minimized"] .popup-content,
+        body[data-popup="minimized"] .popup-input {
+            display: none;
+        }
+
+        .popup-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 1rem 1.25rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+        }
+
+        body[data-popup="minimized"] .popup-header {
+            padding: 0.85rem 1.5rem;
+        }
+
+        body[data-popup="minimized"] .header-title h3 {
+            font-size: 1rem;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-title span {
+            font-size: 1.6rem;
+        }
+
+        .header-title h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            border: none;
+            background: rgba(255, 255, 255, 0.24);
+            color: inherit;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.18s ease, transform 0.18s ease;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.38);
+            transform: translateY(-1px);
+        }
+
+        .control-btn.close-btn:hover {
+            background: rgba(255, 77, 77, 0.82);
+        }
+
+        .popup-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            overflow-y: auto;
+        }
+
+        .popup-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .popup-content::-webkit-scrollbar-track {
+            background: #e9ecef;
+        }
+
+        .popup-content::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+
+        .welcome-box {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.16) 0%, rgba(118, 75, 162, 0.12) 100%);
+            border-left: 4px solid #667eea;
+            border-radius: 12px;
+            padding: 1rem;
+            color: #364152;
+            line-height: 1.6;
+            box-shadow: 0 6px 18px rgba(102, 126, 234, 0.18);
+        }
+
+        .message {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .message.user {
+            align-items: flex-end;
+        }
+
+        .message.assistant {
+            align-items: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 75%;
+            padding: 0.85rem 1rem;
+            border-radius: 18px;
+            line-height: 1.5;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            border-bottom-right-radius: 6px;
+        }
+
+        .message.assistant .message-bubble {
+            background: #ffffff;
+            color: #303a4b;
+            border-bottom-left-radius: 6px;
+        }
+
+        .message.assistant .message-bubble ul {
+            margin: 0.5rem 0 0 1.25rem;
+            padding: 0;
+        }
+
+        .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            align-items: center;
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 1rem;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+        }
+
+        .quick-actions p {
+            width: 100%;
+            margin: 0 0 0.35rem 0;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .quick-btn {
+            border: 1px solid rgba(102, 126, 234, 0.5);
+            color: #4e5ee4;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 999px;
+            padding: 0.55rem 1.1rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+        }
+
+        .quick-btn:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        .popup-input {
+            padding: 1.1rem 1.25rem;
+            background: #ffffff;
+            border-top: 1px solid rgba(229, 231, 235, 0.9);
+            display: flex;
+            align-items: center;
+        }
+
+        .input-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            width: 100%;
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 0.85rem 1.1rem;
+            border-radius: 24px;
+            border: 2px solid rgba(226, 232, 240, 0.9);
+            font-size: 0.95rem;
+            transition: border 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .input-field:focus {
+            border-color: rgba(102, 126, 234, 0.85);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        .send-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 12px 24px rgba(102, 126, 234, 0.35);
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .send-btn:hover {
+            transform: translateX(2px);
+            box-shadow: 0 16px 32px rgba(102, 126, 234, 0.45);
+        }
+
+        .send-btn svg {
+            fill: currentColor;
+        }
+
+        .status-dot {
+            display: inline-flex;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18);
+        }
+    </style>
+</head>
+<body data-popup="closed">
+    <div id="chatOverlay"></div>
+    <div id="chatPopup">
+        <div class="popup-header">
+            <div class="header-title">
+                <span>🤖</span>
+                <div>
+                    <h3>Solar Assistant</h3>
+                    <small style="display:flex; align-items:center; gap:8px; font-weight:500; opacity:0.85;">
+                        <span class="status-dot"></span>
+                        Online • Replies instantly
+                    </small>
+                </div>
+            </div>
+            <div class="header-controls">
+                <button class="control-btn" id="minimizeBtn" title="Minimize">−</button>
+                <button class="control-btn" id="maximizeBtn" title="Maximize">◱</button>
+                <button class="control-btn close-btn" id="closeBtn" title="Close">×</button>
+            </div>
+        </div>
+        <div class="popup-content">
+            <div class="welcome-box">
+                <h4 style="margin: 0 0 0.5rem 0; color: #667eea;">👋 Welcome to Solar Assistant!</h4>
+                <p style="margin: 0; color: #4b5563;">
+                    I'm here to help you understand solar panel installations, costs, and ROI calculations for Sri Lankan households.
+                </p>
+            </div>
+            <div class="message user">
+                <div class="message-bubble">
+                    How much does a 3kW solar system cost?
+                </div>
+            </div>
+            <div class="message assistant">
+                <div class="message-bubble">
+                    A 3kW solar system in Sri Lanka typically costs around <strong>LKR 600,000 to 750,000</strong>, depending on panel quality, roof type, and installation complexity. This includes:
+                    <ul>
+                        <li>Solar panels (6-7 panels of 450W each)</li>
+                        <li>Inverter system</li>
+                        <li>Mounting structures</li>
+                        <li>Installation and labor</li>
+                    </ul>
+                    Would you like to see a detailed breakdown?
+                </div>
+            </div>
+            <div class="message user">
+                <div class="message-bubble">
+                    What's the payback period?
+                </div>
+            </div>
+            <div class="message assistant">
+                <div class="message-bubble">
+                    For a 3kW system, the typical payback period in Sri Lanka is <strong>5-7 years</strong>, depending on your electricity consumption. Factors that affect payback:
+                    <ul>
+                        <li>Your monthly electricity usage</li>
+                        <li>Location (sun hours per day)</li>
+                        <li>Current CEB tariff bracket</li>
+                        <li>System efficiency and maintenance</li>
+                    </ul>
+                    After payback, you'll enjoy free electricity for 18+ years! ☀️
+                </div>
+            </div>
+            <div class="quick-actions">
+                <p>💡 Quick Actions:</p>
+                <button class="quick-btn" type="button">Calculate ROI</button>
+                <button class="quick-btn" type="button">CEB Tariffs</button>
+                <button class="quick-btn" type="button">System Sizing</button>
+            </div>
+        </div>
+        <div class="popup-input">
+            <div class="input-container">
+                <input type="text" class="input-field" placeholder="Type your question here..." />
+                <button class="send-btn" type="button" title="Send message">
+                    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/streamlit-component-lib@latest/dist/index.js"></script>
+    <script>
+        const closeBtn = document.getElementById("closeBtn");
+        const minimizeBtn = document.getElementById("minimizeBtn");
+        const maximizeBtn = document.getElementById("maximizeBtn");
+        const headerControls = document.querySelector(".header-controls");
+
+        const ensureFrame = (state) => {
+            const frame = window.frameElement;
+            if (!frame) return;
+
+            frame.style.position = "fixed";
+            frame.style.border = "none";
+            frame.style.background = "transparent";
+            frame.style.zIndex = "9996";
+            if (!state.is_open) {
+                frame.style.pointerEvents = "none";
+                frame.style.width = "0";
+                frame.style.height = "0";
+                frame.style.right = "32px";
+                frame.style.bottom = "32px";
+                return;
+            }
+
+            frame.style.pointerEvents = "auto";
+
+            if (state.is_maximized) {
+                frame.style.top = "20px";
+                frame.style.left = "20px";
+                frame.style.right = "20px";
+                frame.style.bottom = "20px";
+                frame.style.width = "auto";
+                frame.style.height = "auto";
+            } else {
+                frame.style.top = "";
+                frame.style.left = "";
+                frame.style.right = "32px";
+                frame.style.bottom = "120px";
+                frame.style.width = state.is_minimized ? "360px" : "420px";
+                frame.style.height = state.is_minimized ? "90px" : "600px";
+            }
+        };
+
+        const applyState = (state) => {
+            ensureFrame(state);
+
+            document.body.dataset.popup = state.is_open
+                ? state.is_maximized
+                    ? "maximized"
+                    : state.is_minimized
+                        ? "minimized"
+                        : "open"
+                : "closed";
+
+            maximizeBtn.textContent = state.is_maximized ? "◲" : "◱";
+            maximizeBtn.title = state.is_maximized ? "Restore" : "Maximize";
+        };
+
+        const sendAction = (action) => Streamlit.setComponentValue(action);
+
+        const registerHandlers = () => {
+            closeBtn.addEventListener("click", () => sendAction("close"));
+            minimizeBtn.addEventListener("click", () => sendAction("minimize"));
+            maximizeBtn.addEventListener("click", () => sendAction("maximize"));
+        };
+
+        const handleRender = (event) => {
+            const state = event.detail.args;
+            applyState(state);
+            if (!window.__chatHandlersRegistered) {
+                registerHandlers();
+                window.__chatHandlersRegistered = true;
+            }
+            Streamlit.setFrameHeight(0);
+        };
+
+        Streamlit.events.addEventListener(Streamlit.RENDER_EVENT, handleRender);
+        Streamlit.setComponentReady();
+        Streamlit.setFrameHeight(0);
+    </script>
+</body>
+</html>

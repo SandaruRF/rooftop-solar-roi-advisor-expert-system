@@ -522,9 +522,49 @@ def display_results(recommendation, monthly_kwh, location, roof_type, budget, ro
     
     # Download option
     st.markdown("---")
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        if st.button("📄 Generate PDF Report (Coming Soon)", use_container_width=True):
+    _left_gap, pdf_col, _right_gap = st.columns([1, 2, 1])
+    with pdf_col:
+        st.markdown(
+            """
+            <style>
+            div[data-testid="stVerticalBlock"] > div:has(button[title="PDF download (coming soon)"]) {
+                display: flex !important;
+                justify-content: center !important;
+                margin: 0.75rem auto !important;
+            }
+
+            button[title="PDF download (coming soon)"] {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #8fd3f4 100%) !important;
+                color: #ffffff !important;
+                border: none !important;
+                border-radius: 16px !important;
+                padding: 0.9rem 2rem !important;
+                font-weight: 600 !important;
+                font-size: 1rem !important;
+                box-shadow: 0 12px 32px rgba(118, 75, 162, 0.35) !important;
+                transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+                letter-spacing: 0.02em !important;
+            }
+
+            button[title="PDF download (coming soon)"]:hover {
+                transform: translateY(-4px) scale(1.01) !important;
+                box-shadow: 0 18px 40px rgba(118, 75, 162, 0.45) !important;
+            }
+
+            button[title="PDF download (coming soon)"]:focus {
+                outline: none !important;
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.35) !important;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        if st.button(
+            "📄 Generate PDF Report (Coming Soon)",
+            key="pdf_report_btn",
+            help="PDF download (coming soon)",
+        ):
             st.info("PDF report generation feature will be added in future updates!")
 
 
@@ -548,63 +588,115 @@ def render_floating_button():
     # Initialize chat popup state
     if "chat_popup_open" not in st.session_state:
         st.session_state.chat_popup_open = False
+    if "chat_popup_minimized" not in st.session_state:
+        st.session_state.chat_popup_minimized = False
+    if "chat_popup_maximized" not in st.session_state:
+        st.session_state.chat_popup_maximized = False
     
-    # Create a container for the button positioned absolutely
-    button_container = st.container()
-    
-    with button_container:
-        # Use columns to position the button (invisible layout trick)
-        cols = st.columns([1])
-        with cols[0]:
-            # Custom CSS for the button
-            st.markdown("""
-                <style>
-                /* Hide the default Streamlit button styling */
-                div[data-testid="stVerticalBlock"] > div:has(button[kind="secondary"]) {
-                    position: fixed !important;
-                    bottom: 30px !important;
-                    right: 30px !important;
-                    z-index: 9999 !important;
-                }
-                
-                .stButton > button[kind="secondary"] {
-                    width: 60px !important;
-                    height: 60px !important;
-                    border-radius: 50% !important;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-                    border: none !important;
-                    cursor: pointer !important;
-                    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
-                    padding: 0 !important;
-                    animation: pulse 2s infinite !important;
-                }
-                
-                .stButton > button[kind="secondary"]:hover {
-                    transform: scale(1.1) !important;
-                    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6) !important;
-                }
-                
-                .stButton > button[kind="secondary"] p {
-                    font-size: 30px !important;
-                    margin: 0 !important;
-                    line-height: 1 !important;
-                }
-                
-                @keyframes pulse {
-                    0%, 100% {
-                        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-                    }
-                    50% {
-                        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.8);
-                    }
-                }
-                </style>
-            """, unsafe_allow_html=True)
-            
-            # The actual button that toggles the popup
-            if st.button("💬", key="floating_chat_btn", type="secondary", help="Toggle Chat Assistant"):
-                # Toggle the popup state
-                st.session_state.chat_popup_open = not st.session_state.chat_popup_open
+    st.markdown(
+        """
+        <style>
+        div[data-testid="stVerticalBlock"] > div:has(button[title="Toggle Chat Assistant"]) {
+            position: fixed !important;
+            bottom: 32px !important;
+            right: 32px !important;
+            z-index: 10000 !important;
+            margin: 0 !important;
+            width: auto !important;
+        }
+
+        button[title="Toggle Chat Assistant"] {
+            position: relative;
+            width: 76px !important;
+            height: 76px !important;
+            border-radius: 36% 36% 62% 62% / 40% 40% 72% 72% !important;
+            background: radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.42), transparent 58%),
+                        linear-gradient(140deg, #764ba2 0%, #667eea 55%, #64d6ff 100%) !important;
+            color: #ffffff !important;
+            border: none !important;
+            box-shadow: 0 18px 42px rgba(102, 126, 234, 0.45) !important;
+            padding: 0 !important;
+            font-size: 34px !important;
+            line-height: 1 !important;
+            cursor: pointer !important;
+            transition: transform 0.22s ease, box-shadow 0.22s ease !important;
+            animation: chatFloat 3s ease-in-out infinite !important;
+            overflow: visible !important;
+        }
+
+        button[title="Toggle Chat Assistant"] > p {
+            margin: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        button[title="Toggle Chat Assistant"]::before {
+            content: "";
+            position: absolute;
+            inset: -12px;
+            border-radius: inherit;
+            background: radial-gradient(circle, rgba(118, 75, 162, 0.35) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: -1;
+        }
+
+        button[title="Toggle Chat Assistant"]::after {
+            content: "Chat Assistant";
+            position: absolute;
+            right: 92px;
+            top: 50%;
+            transform: translateY(-50%) scale(0.9);
+            background: rgba(17, 24, 39, 0.92);
+            color: #ffffff;
+            padding: 0.45rem 0.95rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            letter-spacing: 0.03em;
+            box-shadow: 0 8px 22px rgba(17, 24, 39, 0.32);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            white-space: nowrap;
+        }
+
+        button[title="Toggle Chat Assistant"]:hover {
+            transform: translateY(-5px) scale(1.04) !important;
+            box-shadow: 0 24px 46px rgba(102, 126, 234, 0.55) !important;
+            animation-play-state: paused !important;
+        }
+
+        button[title="Toggle Chat Assistant"]:hover::before {
+            opacity: 1;
+        }
+
+        button[title="Toggle Chat Assistant"]:hover::after {
+            opacity: 1;
+            transform: translateY(-50%) scale(1);
+        }
+
+        @keyframes chatFloat {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-6px);
+            }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if st.button("💬", key="floating_chat_btn", type="secondary", help="Toggle Chat Assistant"):
+        st.session_state.chat_popup_open = not st.session_state.chat_popup_open
+        if st.session_state.chat_popup_open:
+            st.session_state.chat_popup_minimized = False
+            st.session_state.chat_popup_maximized = False
+        else:
+            st.session_state.chat_popup_minimized = False
+            st.session_state.chat_popup_maximized = False
 
 
 if __name__ == "__main__":
