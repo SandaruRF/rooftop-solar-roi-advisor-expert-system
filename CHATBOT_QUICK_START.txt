@@ -1,0 +1,96 @@
+"""
+Quick Start Guide for Solar ROI Advisor Chatbot
+================================================
+
+This is a quick reference for using the AI chatbot feature.
+
+STEP 1: Get Your Free API Key
+------------------------------
+1. Go to https://makersuite.google.com/app/apikey
+2. Sign in with Google
+3. Click "Create API Key"
+4. Copy the key (starts with "AIza...")
+
+STEP 2: Add API Key to App
+---------------------------
+Method 1 (Recommended): Create .streamlit/secrets.toml
+   GEMINI_API_KEY = "your-key-here"
+
+Method 2: Enter in UI when prompted
+
+STEP 3: Run the App
+-------------------
+streamlit run app.py
+
+STEP 4: Use the Chatbot
+------------------------
+1. Click "💬 Chat Assistant" in header
+2. Ask questions or use quick actions
+3. Click "← Back" to return to dashboard
+
+Sample Questions:
+-----------------
+- What's the cost of a 3kW solar system?
+- Calculate ROI for 300 units monthly consumption
+- What are CEB tariff rates?
+- How many panels do I need for 5kW?
+- Compare 3kW vs 5kW systems
+- What government subsidies exist?
+- How does net metering work in Sri Lanka?
+
+Quick Actions Available:
+------------------------
+💰 Calculate ROI for 3kW
+⚡ Current CEB Tariff Rates
+📏 How to Size My System
+⚖️ Compare 3kW vs 5kW
+🎁 Government Subsidies
+🔌 Net Metering Info
+
+Tips:
+-----
+- Be specific in your questions
+- Chat maintains conversation context
+- Use "Clear" button to reset history
+- Responses typically take 2-3 seconds
+- Free tier: 60 requests/minute
+
+Troubleshooting:
+----------------
+Problem: "API Key Not Configured"
+Solution: Add your Gemini API key (see Step 2)
+
+Problem: "Rate Limit Reached"
+Solution: Wait 1 minute, then try again
+
+Problem: Slow responses
+Solution: Normal - AI processing takes 2-3 seconds
+
+Problem: Error messages
+Solution: Check internet connection and API key
+
+Features:
+---------
+✅ Natural language Q&A
+✅ Context-aware conversations
+✅ Sri Lanka-specific advice
+✅ Cost calculations in LKR
+✅ CEB/LECO tariff information
+✅ ROI and payback analysis
+✅ System sizing guidance
+✅ Beautiful gradient UI
+✅ Mobile responsive
+✅ Quick action buttons
+
+System Context:
+---------------
+The AI knows:
+- Sri Lankan solar market prices
+- CEB/LECO tariff structures
+- Typical installation costs
+- ROI calculation methods
+- Government incentives
+- Net metering policies
+- Best practices for installations
+
+For more details, see CHATBOT_SETUP.md

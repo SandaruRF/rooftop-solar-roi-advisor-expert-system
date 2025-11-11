@@ -17,27 +17,6 @@ def _ensure_session_state() -> None:
 def _handle_control_clicks() -> None:
     """Provide hidden buttons that can be triggered via JavaScript."""
 
-    st.markdown(
-        """
-        <style>
-        button[title="chat_close_trigger"],
-        button[title="chat_minimize_trigger"],
-        button[title="chat_maximize_trigger"] {
-            position: fixed !important;
-            top: -200px !important;
-            left: -200px !important;
-            width: 0 !important;
-            height: 0 !important;
-            padding: 0 !important;
-            border: none !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
     placeholder = st.empty()
     with placeholder.container():
         close_clicked = st.button(
@@ -476,23 +455,54 @@ def render_chat_popup() -> None:
 
     <script>
     (function() {{
-        const triggers = {{
-            close: document.querySelector('button[title="chat_close_trigger"]'),
-            minimize: document.querySelector('button[title="chat_minimize_trigger"]'),
-            maximize: document.querySelector('button[title="chat_maximize_trigger"]')
+        const findTrigger = (label) => {{
+            const buttons = Array.from(document.querySelectorAll('button[kind]'));
+            return buttons.find((btn) => btn.innerText.trim() === label);
         }};
 
-        document.querySelectorAll('[data-chat-action]').forEach((btn) => {{
-            btn.addEventListener('click', (event) => {{
-                event.preventDefault();
-                event.stopPropagation();
-                const action = btn.dataset.chatAction;
-                const trigger = triggers[action];
-                if (trigger) {{
-                    trigger.click();
-                }}
+        const hideTrigger = (btn) => {{
+            if (!btn) return;
+            btn.innerHTML = '';
+            const wrapper = btn.closest('div[data-testid="stButton"]');
+            if (wrapper) {{
+                wrapper.style.position = 'absolute';
+                wrapper.style.pointerEvents = 'none';
+                wrapper.style.opacity = '0';
+                wrapper.style.width = '0';
+                wrapper.style.height = '0';
+                wrapper.style.overflow = 'hidden';
+            }}
+        }};
+
+        const initializeTriggers = () => {{
+            const triggers = {{
+                close: findTrigger('chat_close_hidden'),
+                minimize: findTrigger('chat_minimize_hidden'),
+                maximize: findTrigger('chat_maximize_hidden')
+            }};
+
+            const missing = Object.values(triggers).some((btn) => !btn);
+            if (missing) {{
+                window.requestAnimationFrame(initializeTriggers);
+                return;
+            }}
+
+            Object.values(triggers).forEach(hideTrigger);
+
+            document.querySelectorAll('[data-chat-action]').forEach((btn) => {{
+                btn.addEventListener('click', (event) => {{
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const action = btn.dataset.chatAction;
+                    const trigger = triggers[action];
+                    if (trigger) {{
+                        trigger.click();
+                    }}
+                }});
             }});
-        }});
+        }};
+
+        initializeTriggers();
     }})();
     </script>
     """
