@@ -240,11 +240,11 @@ def calculate_confidence(
     # Uncertainty in payback period (in years)
     uncertainty_years = round(payback_years * total_uncertainty, 1)
     
-    # Determine confidence level
-    if total_uncertainty < 0.2:
+    # Determine confidence level - Adjusted thresholds for more variation
+    if total_uncertainty < 0.25:
         confidence_level = "high"
         explanation = "High confidence based on stable regional data and tariffs"
-    elif total_uncertainty < 0.35:
+    elif total_uncertainty < 0.40:
         confidence_level = "medium"
         explanation = "Medium confidence due to some variability in conditions"
     else:

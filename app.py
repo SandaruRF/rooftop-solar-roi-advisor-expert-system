@@ -374,6 +374,37 @@ def display_results(recommendation, monthly_kwh, location, roof_type, budget, ro
     
     # Confidence and Uncertainty
     st.markdown("### 📈 Confidence Assessment")
+    
+    # Calculate numeric confidence score with better variation
+    if recommendation.payback_years and recommendation.payback_years > 0:
+        # Calculate uncertainty percentage relative to payback period
+        uncertainty_percentage = (recommendation.confidence_uncertainty / recommendation.payback_years) * 100
+        
+        # Inverse relationship: lower uncertainty = higher confidence
+        # For LOW confidence with typical 35% uncertainty, we want 55-65% score
+        # For MEDIUM with 25% uncertainty, we want 70-75% score  
+        # For HIGH with 15% uncertainty, we want 85-90% score
+        
+        if recommendation.confidence_level == "high":
+            # High: 80-95% range, less sensitive to small variations
+            base = 92
+            confidence_score = max(80, min(95, base - (uncertainty_percentage * 0.5)))
+        elif recommendation.confidence_level == "medium":
+            # Medium: 65-80% range
+            base = 77
+            confidence_score = max(65, min(80, base - (uncertainty_percentage * 0.4)))
+        else:  # low
+            # Low: 50-70% range, most sensitive to variations
+            base = 68
+            # With 35% uncertainty_percentage, this gives: 68 - (35 * 0.5) = 68 - 17.5 = 50.5%
+            # With 30% uncertainty_percentage, this gives: 68 - (30 * 0.5) = 68 - 15 = 53%
+            # With 25% uncertainty_percentage, this gives: 68 - (25 * 0.5) = 68 - 12.5 = 55.5%
+            confidence_score = max(50, min(70, base - (uncertainty_percentage * 0.5)))
+    else:
+        # Fallback scores if no payback_years
+        confidence_scores = {"high": 85, "medium": 70, "low": 55}
+        confidence_score = confidence_scores.get(recommendation.confidence_level, 60)
+    
     confidence_colors = {
         "high": "#4CAF50",  # Green
         "medium": "#FF9800",  # Orange
@@ -390,7 +421,7 @@ def display_results(recommendation, monthly_kwh, location, roof_type, budget, ro
     
     st.markdown(f"""
     <div style="background-color: {bg_color}15; border-left: 5px solid {bg_color}; padding: 1rem; border-radius: 5px; margin: 1rem 0;">
-    <strong style="color: {bg_color};">{icon} Confidence Level: {recommendation.confidence_level.upper()}</strong><br>
+    <strong style="color: {bg_color};">{icon} Confidence Level: {recommendation.confidence_level.upper()} ({confidence_score:.0f}%)</strong><br>
     <strong>Payback Period Uncertainty:</strong> ±{recommendation.confidence_uncertainty} years<br>
     <small>This accounts for variations in sun hours, electricity tariffs, and installation costs.</small>
     </div>
@@ -476,23 +507,34 @@ def display_results(recommendation, monthly_kwh, location, roof_type, budget, ro
                     st.warning(f"**Fastest Payback:**\n\n{payback_provider['Provider']}\n\n{payback_provider['Payback (Years)']} years")
         
         with tab2:
-            # Detailed cards for each provider
+            # Detailed cards for each provider - Orange color scheme
             for i, provider_info in enumerate(provider_data):
-                tier_colors = {
-                    'Budget': '#2196F3',
-                    'Standard': '#4CAF50',
-                    'Premium': '#9C27B0'
-                }
-                tier_color = tier_colors.get(provider_info['Service Tier'], '#757575')
-                
                 st.markdown(f"""
-                <div style="background-color: {tier_color}10; border-left: 5px solid {tier_color}; padding: 1.5rem; border-radius: 5px; margin: 1rem 0;">
-                    <h4 style="color: {tier_color}; margin-top: 0;">🏢 {provider_info['Provider']}</h4>
-                    <p><strong>Service Tier:</strong> <span style="color: {tier_color};">{provider_info['Service Tier']}</span></p>
-                    <p><strong>Estimated Cost:</strong> {provider_info['Est. Cost (LKR)']}</p>
-                    <p><strong>Warranty:</strong> {provider_info['Warranty (Years)']} years</p>
-                    <p><strong>Estimated Payback:</strong> {provider_info['Payback (Years)']}</p>
-                    <p><strong>Details:</strong> <em>{provider_info['Notes']}</em></p>
+                <div style="background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%); 
+                            border-left: 5px solid #f97316; padding: 1.5rem; border-radius: 12px; 
+                            margin: 1rem 0; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2);">
+                    <h4 style="color: #9a3412; margin-top: 0; font-size: 1.25rem; font-weight: 700;">
+                        🏢 {provider_info['Provider']}
+                    </h4>
+                    <p style="margin: 0.5rem 0;">
+                        <strong style="color: #7c2d12;">Service Tier:</strong> 
+                        <span style="background: #f97316; color: white; padding: 0.25rem 0.75rem; 
+                                     border-radius: 12px; font-size: 0.875rem; font-weight: 600;">
+                            {provider_info['Service Tier']}
+                        </span>
+                    </p>
+                    <p style="margin: 0.5rem 0; color: #78350f;">
+                        <strong style="color: #7c2d12;">Estimated Cost:</strong> {provider_info['Est. Cost (LKR)']}
+                    </p>
+                    <p style="margin: 0.5rem 0; color: #78350f;">
+                        <strong style="color: #7c2d12;">Warranty:</strong> {provider_info['Warranty (Years)']} years
+                    </p>
+                    <p style="margin: 0.5rem 0; color: #78350f;">
+                        <strong style="color: #7c2d12;">Estimated Payback:</strong> {provider_info['Payback (Years)']}
+                    </p>
+                    <p style="margin: 0.5rem 0; color: #78350f;">
+                        <strong style="color: #7c2d12;">Details:</strong> <em>{provider_info['Notes']}</em>
+                    </p>
                 </div>
                 """, unsafe_allow_html=True)
     else:
@@ -514,30 +556,10 @@ def display_results(recommendation, monthly_kwh, location, roof_type, budget, ro
         - **Roof Space:** {f'{roof_size} sq.ft.' if roof_size else 'Not specified'}
         """)
     
-    # Resources
-    st.markdown("### 📚 Helpful Resources")
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.markdown("""
-        **[Ceylon Electricity Board](https://www.ceb.lk/)**  
-        Official CEB solar programs
-        """)
-    
-    with col2:
-        st.markdown("""
-        **[Sustainable Energy Authority](https://www.energy.gov.lk/)**  
-        Government energy resources
-        """)
-    
-    with col3:
-        st.markdown("""
-        **Local Solar Installers**  
-        Get quotes from certified installers
-        """)
+
     
     # Download option
-    st.markdown("---")
+
     _left_gap, pdf_col, _right_gap = st.columns([1, 2, 1])
     with pdf_col:
         st.markdown(
@@ -576,12 +598,6 @@ def display_results(recommendation, monthly_kwh, location, roof_type, budget, ro
             unsafe_allow_html=True,
         )
 
-        if st.button(
-            "📄 Generate PDF Report (Coming Soon)",
-            key="pdf_report_btn",
-            help="PDF download (coming soon)",
-        ):
-            st.info("PDF report generation feature will be added in future updates!")
 
 
 # Sidebar footer
@@ -589,7 +605,7 @@ def sidebar_footer():
     st.sidebar.markdown("---")
     st.sidebar.markdown("""
     <small>
-    💡 **Tip:** Keep your electricity bill handy for accurate inputs!
+    💡 Tip: Keep your electricity bill handy for accurate inputs!
     
     🔒 Your data is processed locally and not stored.
     
